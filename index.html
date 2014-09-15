@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,28 +13,31 @@
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
-      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
-  </head>
-  <body style="background-color: #f8f8f8; color: #818181;">
-<div class="container-fluid">
-   <div class="row" style="height: 5px; background-color: #f67d1b;">
-   </div>
-</div>
-</div>
+</head>
+<body>
 <div class="container">
-    <img src="img/openkvk.png" alt="openkvk" style="padding-top: 1em; padding-bottom: 1em;" />
+    <img src="img/openkvk.png" alt="openkvk" id="logo"/>
+
     <div class="panel panel-default">
         <div class="panel-heading">Zoekformulier</div>
         <div class="panel-body">
-            <form class="form-inline" role="form" onsubmit="return false;">
-                <div class="form-group">
-                    <label class="sr-only" for="companyname">Naam</label>
-                    <input type="text" class="zipcode form-control" id="companynname" style="min-width: 22em;" placeholder="Een handelsnaam, straat of postcode..." />
+            <div class="input-group">
+
+                <label class="sr-only" for="companyname">Naam</label>
+                <input type="text" class="zipcode form-control" id="companyname" placeholder="Een handelsnaam, straat of postcode..."/>
+
+                <span class="input-group-btn">
+                    <input type="submit" class="btn btn-primary dropdown-toggle" value="Zoek" id="search"/>
+                </span>
+            </div>
+            <div class="openkvk-loading progress" style="display: none">
+                <div class="progress-bar progress-bar-striped active"  role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
+                    <span class="sr-only">Loading please wait...</span>
                 </div>
-                <input type="submit" class="form-control" value="Zoek" style="background-color: #f67d1b; font-weight: bold; color: #fff;" />
-            </form>
+            </div>
         </div>
     </div>
     <ul id="kvkResults" class="list-group"></ul>
@@ -44,194 +47,44 @@
 	de openkvk <a href="http://github.com/skinkie/openkvk-migratie">migratie pagina</a> is mogelijk gemaakt door <a href="https://sslcertificaten.nl/">sslcertificaten.nl</a> en het javascript voorbeeld van <a href="https://twitter.com/Boekkooi">@boekkooi</a>.
 </div>
 
-    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script src="js/bootstrap.min.js"></script>
-    <script>
-(function ($) {
-    "use strict";
+<div class="modal fade" id="company-dialog" tabindex="-1" role="dialog" aria-labelledby="companyDialog"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span
+                        class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="companyDialog"></h4>
+            </div>
+            <div class="modal-body">
+                <pre></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-    var OpenKvk = function (container, options) {
-        options = $.extend({}, OpenKvk.DEFAULTS, options);
-        for (var p in options.resultMapping) {
-            if (options.resultMapping.hasOwnProperty(p) && options.resultMapping === null) {
-                delete options.resultMapping[p];
-            }
-        }
-        this.options = options;
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="js/bootstrap.min.js"></script>
+<script src="js/jquery.openkvk.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#kvkResults').openkvk({
+            onSelection: function (data) {
+                $('#company-dialog .modal-title').text(data.rechtspersoon);
+                $('#company-dialog .modal-body pre').text(JSON.stringify(data, null, "\t"));
+                $('#company-dialog').modal('show');
+            }
+        });
 
-        this.container = container = $(container);
-
-        this.searchFields = $(this.options.searchFields);
-        this.searchFields.on('focusout.openkvk', this.search.bind(this));
-
-        this.container.on('click', function(event) {
-            var current = $(event.target);
-            while (current && !current.is(container)) {
-                var data = current.data('openkvk-data');
-                if (data !== undefined) {
-                    event.preventDefault();
-                    options.onSelection(data);
-                    break;
-                }
-                current = current.parent();
-            }
-        });
-    };
-
-    OpenKvk.DEFAULTS = {
-        api: 'https://officieel.openkvk.nl/json/',
-
-        onSelection: function(data) {
-            alert(JSON.stringify(data));
-        },
-
-        filter: function (result) {
-            return !result.hasOwnProperty('status');
-        },
-
-        searchFields: '.zipcode, .number',
-
-        resultTemplate: '<a href="#" class="list-group-item">' +
-                            '<h4 class="list-group-item-heading"></h4>' +
-                            '<p class="list-group-item-text">' +
-                                '<strong class="companyNumber"></strong><br />' +
-                                '<span class="address"></span><br /><span class="zipCode"></span> <span class="city"></span>' +
-                            '</p>' +
-                        '</a>',
-        noResultTemplate: '<li class="list-group-item list-group-item-warning">No results</li>',
-        errorTemplate: '<li class="list-group-item list-group-item-danger">No results</li>',
-
-        resultMapping: {
-            rechtspersoon: '.list-group-item-heading',
-            vestigingsnummer: null,
-            adres: '.address',
-            woonplaats: '.city',
-            kvk: null,
-            postcode: '.zipCode',
-            type: null,
-            kvks: '.companyNumber',
-            status: null
-        },
-
-        renderResult: null,
-        renderNoResult: null,
-        renderError: null
-    };
-
-    OpenKvk.prototype.search = function () {
-        var self = this;
-
-        var query = $.trim(this.searchFields.map(function () {
-            return $(this).val();
-        }).get().join(' '));
-        if (query === '') {
-            this._renderNoResults(query);
-            return;
-        }
-
-        var url = this.options.api + encodeURIComponent(query);
-        $.getJSON(url, this._searchSuccess.bind(this, query))
-                .fail(function (xhr, textStatus) {
-                    if (xhr.status === 404) {
-                        self._renderNoResults(query);
-                    } else {
-                        self._renderError("Request failed: " + textStatus, jqXHR);
-                    }
-                });
-    };
-
-    OpenKvk.prototype.destroy = function () {
-        this.container.off('.openkvk');
-        this.searchFields.off('.openkvk');
-
-        delete this.container;
-        delete this.options;
-        delete this.searchFields;
-    };
-
-    OpenKvk.prototype._searchSuccess = function (query, data, textStatus, xhr) {
-        if (!$.isArray(data)) {
-            this._renderError("Invalid data received.", xhr);
-            return;
-        }
-
-        data = data.filter(this.options.filter);
-        if (data.length === 0) {
-            this._renderNoResults(query);
-            return;
-        }
-
-        this._renderResults(data, query);
-    };
-
-    OpenKvk.prototype._renderResults = function (data, query) {
-        if ($.isFunction(this.options.renderResult)) {
-            this.options.renderResult(data, query);
-            return;
-        }
-
-        var template = this.options.resultTemplate;
-        var map = this.options.resultMapping;
-        var items = $.map(data, function (itemData) {
-            var item = $(template);
-            item.data('openkvk-data', itemData);
-
-            $.each(map, function (prop, selector) {
-                item.find(selector).text(itemData[prop]);
-            });
-
-            return item;
-        });
-
-        this.container.empty().append(items);
-    };
-
-    OpenKvk.prototype._renderNoResults = function (query) {
-        if ($.isFunction(this.options.renderResult)) {
-            this.options._renderNoResults(query);
-            return;
-        }
-
-        this.container.empty().append(this.options.noResultTemplate);
-    };
-
-    OpenKvk.prototype._renderError = function (message, xhr) {
-        if ($.isFunction(this.options.renderError)) {
-            this.options.renderError(message, xhr);
-            return;
-        }
-
-        this.container.empty();
-        this.container.empty().append($(this.options.errorTemplate).text(message));
-    };
-
-
-    $.fn.openkvk = function (option) {
-        return this.each(function () {
-            var $this = $(this);
-            var data = $this.data('openkvk');
-            var options = typeof option == 'object' ? option : {};
-
-            if (!data) {
-                data = new OpenKvk(this, options);
-                $this.data('openkvk', data);
-            }
-            if (typeof option == 'string') {
-                data[option]();
-
-                if (option == 'destroy') {
-                    $this.removeData('openkvk');
-                }
-            }
-        });
-    };
-})(jQuery);
-
-$(document).ready(function () {
-    $('#kvkResults').openkvk();
-});   
-    </script>
-  </body>
+        $('#search').click(function () {
+            $('#kvkResults').openkvk('search');
+        });
+    });
+</script>
+</body>
 </html>
